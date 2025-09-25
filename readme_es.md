@@ -1,121 +1,229 @@
-# Reporte Inicial – App Pública HubSpot ↔ Titanx
+# Initial Report – HubSpot ↔ TitanX Public App
 
-## 1. Contexto
-Se plantea el desarrollo de una **app pública** para el HubSpot App Marketplace que conecte HubSpot con Titanx.  
-El objetivo es que los usuarios puedan instalarla desde el Marketplace, autorizarla vía OAuth 2.0 y administrar la sincronización de datos (ej. contactos, deals, propiedades, operaciones específicas de negocio).
+## 1. Context and Goals
 
-El diseño debe ser **multi-tenant**, permitiendo que múltiples portales de HubSpot se conecten de manera independiente.
+TitanX requires the development of a **public HubSpot App** to be listed on the **HubSpot App Marketplace**.  
 
----
-
-## 2. Tipos de cuentas y licencias necesarias
-
-### Para crear la Public App
-- **HubSpot Developer Account (gratuita):**  
-  Necesaria para registrar la aplicación, definir scopes, probar OAuth y preparar la publicación en el Marketplace.  
-
-### Para utilizar la Public App
-- **Cualquier portal de HubSpot (Free, Starter, Pro o Enterprise):**  
-  - Un usuario con permisos de **Súper Administrador** puede instalar la app.  
-  - La app puede funcionar en cuentas Free, pero **las funcionalidades dependen de la licencia**:  
-    - **Free/Starter:** solo acceso básico a contactos y propiedades estándar.  
-    - **Professional/Enterprise:** acceso avanzado (ej. workflows, objetos personalizados, reporting avanzado).  
-
-⚠️ Si la app requiere integrarse con **objetos personalizados** o ciertas APIs avanzadas, será **obligatorio** que el portal tenga **Professional o Enterprise**.
+- The app should enable users to **access TitanX functionality directly from HubSpot**, avoiding context-switching between platforms.  
+- It must be **multi-tenant**, so multiple HubSpot portals can install and use it independently.  
+- The integration should allow **sending contacts/lists to TitanX for scoring or enrichment** and automatically updating HubSpot records with the results.  
+- The experience should feel **native inside HubSpot**, while maintaining TitanX branding and best practices.  
 
 ---
 
-## 3. UI y experiencia de usuario
+## 2. HubSpot Accounts and Licensing Requirements
 
-- Con **HubSpot UI Extensions** podemos renderizar pantallas dentro de **Settings** y en algunos records (ej. sidebar de contacto o deal).  
-- **Limitación:** si se necesita una interfaz más compleja (dashboards avanzados, reportes visuales, manejo de data intensivo) será necesario construir una **aplicación externa** (ej. una webapp en React/Next.js) que se conecte al backend y muestre los datos fuera de HubSpot.  
+### For App Developers (to build & publish)
+- A **HubSpot Developer Account (free)** is required to:
+  - Register and configure the Public App.  
+  - Define OAuth scopes.  
+  - Test installation, authentication, and app UI.  
+  - Submit the app for Marketplace review.  
 
----
+- Additional requirements to publish:
+  - **Public privacy policy URL** hosted on your own domain.  
+  - **Backend with SSL and custom domain** (e.g. `https://api.titanx.com/callback`).  
+  - Compliance with HubSpot’s Marketplace certification requirements.  
 
-## 4. Backend externo requerido
+### For Testing During Development
+- HubSpot provides **Developer Test Accounts** (sandbox).  
+- These test accounts include **Pro/Enterprise features** at no cost.  
+- They allow testing of OAuth, scopes, and embedded UI extensions.  
 
-Para que una Public App funcione correctamente se necesita un **backend externo**, con las siguientes características:
+### For Clients Using the App
+- The app can technically be installed on **any HubSpot portal** (Free, Starter, Pro, Enterprise).  
+- However, functionality depends on the license level:  
+  - **Free/Starter:** Only basic access to contacts and standard properties.  
+  - **Professional:** Recommended minimum. Required for workflows, lists, and more advanced automation.  
+  - **Enterprise:** Mandatory if the app integrates with:
+    - **Custom Objects.**  
+    - **Custom Behavioral Events.**  
+    - Advanced reporting/dashboards.  
 
-- **Servidor:** preferiblemente en **AWS (EC2, Lambda, o ECS)** para escalabilidad.  
-- **Base de datos:** (multi-tenant) para almacenar tokens de acceso/refresh por portal.  
-- **Autenticación:** implementación completa del flujo **OAuth 2.0 de HubSpot**.  
-- **Requerimientos obligatorios:**  
-  - **SSL** activo (HTTPS).  
-  - **Dominio propio** (ej. `api.midominio.com`).  
-  - **Disponibilidad alta** (mínimo 99.9%).  
-  - Logs y métricas (ej. con CloudWatch o ELK).  
-
-El backend será el encargado de:
-- Guardar y refrescar los tokens de cada portal conectado.  
-- Exponer endpoints que serán consumidos por la UI de HubSpot (via `hubspot.fetch`).  
-- Conectarse con Titanx para la sincronización bidireccional.  
-
----
-
-## 5. Buenas prácticas para publicar en el Marketplace
-
-- **Seguridad:**  
-  - Tokens cifrados en la base de datos.  
-  - Manejo estricto de refresh tokens.  
-  - HTTPS en todas las llamadas.  
-- **UX:**  
-  - Instalación en 3 pasos máximo (Install → OAuth → Settings page).  
-  - Botón claro de reconexión si expira el token.  
-- **Requisitos de HubSpot Marketplace:**  
-  - Política de privacidad pública.  
-  - URL de soporte y documentación.  
-  - Video demo de instalación y uso.  
-  - Validación de la app por parte del equipo de HubSpot.  
+**Summary:**  
+- 🔧 **Development/Publishing** → HubSpot Developer Account (free).  
+- 🧪 **Testing** → Developer Test Accounts (sandbox, with Pro/Enterprise features).  
+- 👥 **Client usage** → Minimum Professional license; Enterprise required for advanced features.  
 
 ---
 
-## 6. Definición pendiente
+## 3. User Interface & Experience
 
-No es que la API esté incompleta, sino que **falta definir el flow funcional esperado**:  
-- ¿Qué entidades de HubSpot deben sincronizarse con Titanx (contactos, deals, tickets, objetos personalizados)?  
-- ¿Cómo es la dirección de datos (solo lectura desde HubSpot, escritura hacia HubSpot, o bidireccional)?  
-- ¿Con qué frecuencia y bajo qué reglas de negocio?  
-- ¿Qué ocurre en caso de conflictos de datos?  
+- HubSpot **UI Extensions** will be used to render pages inside:  
+  - **Settings** (for configuration, mappings, and global controls).  
+  - **Record pages** (contact/deal sidebars, custom cards).  
 
----
+- **Limitations:** UI Extensions are suitable for embedded panels and forms but not for complex dashboards.  
+  - If TitanX needs more advanced dashboards (reporting, bulk management, data-intensive UI), an **external React/Next.js webapp** will be required.  
+  - This external UI would still integrate with HubSpot via the backend and OAuth.  
 
-## 7. Preguntas críticas para Titanx
-
-| Pregunta                                                                                                   | Por qué es crítica / qué afecta                                        | Qué información esperar                                         |
-| ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **¿Cuáles endpoints usaré para scoring / enrich / sync (métodos, rutas, payloads, retorno)?**              | Sin eso no puedes construir el backend ni mapear datos.                | JSON de ejemplo request/response, errores, limits.              |
-| **¿Qué datos (campos) puedo/quiero sincronizar entre Titanx ↔ HubSpot?**                                   | Necesario para definir propiedades HubSpot, mappings y permisos OAuth. | Lista de campos con tipos, obligatorios / opcionales, longitud. |
-| **¿Qué eventos disparan notificaciones hacia ustedes (webhooks)?**                                         | Para saber cuándo recibir datos push en lugar de polling.              | URLs webhooks, eventos disponibles, payloads esperados.         |
-| **¿Hay límites de uso / rate limits en su API?**                                                           | Para planear throttling / backoff / cola.                              | Límite por minuto / hora, headers de quota, reset.              |
-| **¿Ambientes sandbox / test / producción separados?**                                                      | Para no romper en producción.                                          | Dominios, credenciales dummy, keys separadas.                   |
-| **¿Qué lógica de negocio / reglas hay para scoring / enriquecimiento?**                                    | Para saber cómo expones esos datos en UI y backend.                    | Fórmulas, cuándo re-evaluar, cuándo invalidar.                  |
-| **¿Qué identificador usan para relacionar entidades con HubSpot (por ejemplo: email, uuid, external_id)?** | Para hacer el match entre los datos de HubSpot y Titanx.               | Campo “titanx_id” o reglas de coincidencia.                     |
-| **¿Qué frecuencia de sincronización se permite / espera?**                                                 | Para dimensionar procesos (batch, realtime).                           | Ej: cada 5 min, al tick de evento, lotes nocturnos, etc.        |
-| **¿Qué comportamiento en caso de fallo / inconsistencia de datos?**                                        | Necesario para diseñar la tolerancia al error.                         | Retries, dead letter, logs, alertas.                            |
+- **Expected UX (from client transcript):**  
+  - Ability to **submit lists/contacts** for scoring/enrichment.  
+  - Real-time progress/status tracking inside HubSpot.  
+  - Results (scores, enrichment fields) written directly into HubSpot records.  
+  - A **dashboard-style panel** with:  
+    - Credits available.  
+    - Jobs in progress.  
+    - History of submissions.  
+    - Mapping configuration (HubSpot fields ↔ TitanX fields).  
+  - Interface visually aligned with TitanX’s Salesforce experience but styled to feel native to HubSpot.  
 
 ---
 
-## 8. Estimación de tiempo de desarrollo
+## 4. Required External Backend
 
-El proyecto completo se estima entre **5 y 6 meses**, distribuido en fases:
+The app **cannot rely solely on HubSpot functions**. A backend is required to:  
 
-1. **Mes 1 – 2:**  
-   - Diseño del flow de la app.  
-   - Setup de backend en AWS con base de datos(MongoDB, PostgreSQL, MySQL).  
-   - Implementación de OAuth multi-tenant.  
-2. **Mes 3 – 4:**  
-   - Desarrollo de endpoints backend.  
-   - UI en HubSpot (Settings + paneles contextuales).  
-   - Integración con Titanx.  
-3. **Mes 5 – 6:**  
-   - QA, pruebas de performance y seguridad.  
-   - Preparación de documentación y video.  
-   - Envío y aprobación en el Marketplace.  
+- Manage **multi-tenant OAuth 2.0 authentication**.  
+- Store **access and refresh tokens per portal**.  
+- Expose **API endpoints** to be consumed by HubSpot UI Extensions (via `hubspot.fetch`).  
+- Orchestrate the **sync between HubSpot ↔ TitanX**.  
+
+### Recommended Backend Setup
+- **Infrastructure:** AWS (EC2, ECS, or Lambda).  
+- **Database:** MongoDB (multi-tenant token storage, jobs, and logs).  
+- **Requirements:**  
+  - **SSL (HTTPS)**.  
+  - **Custom domain** (`api.titanx.com`).  
+  - **High availability (99.9%)**.  
+  - **Monitoring and logging** (CloudWatch, ELK, etc.).  
+
+### Security Practices
+- Encrypt tokens before storing them.  
+- Rotate refresh tokens when possible.  
+- Ensure **least-privilege OAuth scopes** (only request what’s needed).  
+- Enforce HTTPS everywhere.  
 
 ---
 
-## 9. Próximos pasos
-1. Definir el **flujo funcional** de la app junto al equipo de producto.  
-2. Confirmar **qué licencia mínima de HubSpot se exigirá** a los clientes.  
-3. Montar backend inicial en AWS con dominio SSL.  
-4. Desarrollar el **MVP de autenticación + almacenamiento de tokens**.  
+## 5. Best Practices for HubSpot Marketplace Publication
+
+- **Security & Compliance**  
+  - Encrypt all tokens and sensitive data.  
+  - Implement secure OAuth token refresh.  
+  - Only process the minimum required fields from HubSpot.  
+- **User Experience**  
+  - Installation should be ≤ 3 steps (Install → Authorize → Configure).  
+  - Provide clear reconnection options if OAuth expires.  
+- **HubSpot Marketplace Requirements**  
+  - Public privacy policy.  
+  - Support page and documentation URL.  
+  - Demo video of installation and usage.  
+  - App will undergo HubSpot’s validation and approval process.  
+
+---
+
+## 6. Client Requirements from TitanX Transcript
+
+### Integration Goals
+- Users should use TitanX **directly within HubSpot**.  
+- Avoid switching platforms.  
+- Enable **scoring and enrichment of contacts/lists**.  
+- Results flow back to HubSpot **automatically**.  
+
+### Type of Integration
+- **Public Marketplace App** (not private).  
+- Must pass HubSpot’s certification for listing.  
+
+### API & Technical Readiness
+- TitanX API already works with Salesforce (stateless, webhook support).  
+- TitanX API supports **up to 10,000 records per call**.  
+- Open question: does HubSpot integration also allow stateless use, or will some configuration/data need to be persisted?  
+
+### UX/UI Expectations
+- Similar to Salesforce experience:  
+  - Dashboard with submissions, progress, credits, and history.  
+  - Mapping UI for HubSpot ↔ TitanX fields.  
+  - Panels/cards embedded in HubSpot.  
+- Native HubSpot look-and-feel but aligned with TitanX branding.  
+
+### Partner Expectations (On The Fuze)
+- Guide on **solution design and best practices**.  
+- Define HubSpot **UX/UI flows**.  
+- Provide expertise on **object and user management** in HubSpot.  
+- Collaborate directly with TitanX devs and decision-makers.  
+
+### Internal Management
+- All code/configuration to remain in TitanX repos.  
+- TitanX will designate one internal manager for integrations.  
+- They do not plan to develop deep HubSpot expertise internally.  
+
+### Desired Features & Capabilities
+1. **Direct CRM Operations**  
+   - Submit contacts/lists to TitanX for scoring/enrichment.  
+   - Automatic updates back into HubSpot.  
+2. **Embedded UI**  
+   - Cards/panels for credits, progress, history, mapping.  
+3. **Workflow Efficiency**  
+   - One-click actions.  
+   - Dashboards and reports in HubSpot.  
+4. **Performance**  
+   - Bulk operations: up to 10,000 records per API call.  
+   - Scheduled or manual syncs.  
+5. **Security/Compliance**  
+   - Minimal fields only.  
+   - Field-level documentation.  
+   - Data stays under TitanX control.  
+6. **Documentation & Enablement**  
+   - Field-level compliance docs.  
+   - End-user enablement handled internally.  
+
+---
+
+## 7. Open Definitions / Pending Scoping
+
+The API is ready, but the **functional flow** must be defined:  
+- Which HubSpot objects (contacts, deals, tickets, custom objects)?  
+- Direction of data flow (read, write, bidirectional)?  
+- Frequency of sync (real-time, scheduled, manual)?  
+- Conflict resolution policies.  
+- Exact field mappings (HubSpot ↔ TitanX).  
+
+---
+
+## 8. Critical Questions for Discovery
+
+| Question                                                                                                  | Why it’s critical / what it affects                                   | Expected information                                             |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **Which endpoints will be used for scoring / enrichment / sync (methods, routes, payloads, return)?**     | Needed to build backend and map data.                                  | Example JSON requests/responses, errors, rate limits.            |
+| **Which fields will be synced between TitanX ↔ HubSpot?**                                                 | Required to define HubSpot properties, mappings, and OAuth scopes.     | List of fields, types, required/optional, length.               |
+| **What events trigger webhooks?**                                                                         | To know when to receive push instead of polling.                       | Webhook URLs, available events, payloads.                       |
+| **What API limits apply?**                                                                                | To design throttling/backoff/queueing.                                 | Rate limits per minute/hour, quota headers, reset intervals.    |
+| **Are sandbox/test/production environments separate?**                                                    | To avoid breaking production.                                          | Domains, dummy credentials, keys.                              |
+| **What business rules exist for scoring/enrichment?**                                                     | To define how data is exposed in UI and backend.                       | Formulas, re-evaluation triggers, invalidation rules.           |
+| **What identifier links HubSpot and TitanX entities (email, uuid, external_id)?**                         | Needed to match HubSpot and TitanX records.                            | “titanx_id” field or matching rules.                           |
+| **What sync frequency is expected/allowed?**                                                              | To size batch/realtime processes.                                      | Every 5 min, event-based, nightly batches, etc.                 |
+| **What happens in case of data failures/inconsistencies?**                                                | To design error tolerance.                                             | Retry rules, dead letter queues, logging, alerts.               |
+
+---
+
+## 9. Development Timeline (Estimate)
+
+The project is expected to take **5–6 months**:
+
+1. **Months 1–2**  
+   - Functional flow design with TitanX team.  
+   - Backend setup in AWS with MongoDB.  
+   - Multi-tenant OAuth implementation.  
+
+2. **Months 3–4**  
+   - Backend endpoints for HubSpot ↔ TitanX sync.  
+   - HubSpot UI Extensions in Settings and record pages.  
+   - First integration tests with TitanX API.  
+
+3. **Months 5–6**  
+   - QA, performance/security testing.  
+   - Documentation (field-level + compliance).  
+   - Demo video and Marketplace submission.  
+
+---
+
+## 10. Next Steps
+
+1. Define **functional flow** with TitanX (objects, sync direction, mapping).  
+2. Confirm **minimum HubSpot license required** for clients.  
+3. Deploy **backend skeleton on AWS** (SSL + domain + Mongo).  
+4. Build MVP with **OAuth + token storage**.  
+5. Begin **iterative sprints** with TitanX devs.  
+
+---
