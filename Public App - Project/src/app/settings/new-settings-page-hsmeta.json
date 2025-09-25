@@ -1,0 +1,7 @@
+{
+  "uid": "settings-PublicApp-Test",
+  "type": "settings",
+  "config": {
+    "entrypoint": "/app/settings/NewSettingsPage.jsx"
+  }
+}
